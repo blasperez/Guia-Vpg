@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Heroes - Series Viewer</title>
+    <link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+    <header>
+        <h1>Madre aqui esta la serie de HEROES</h1>
+        <P>Que la disfrutes tanto como ivan disfruta comer polla</P>
+    </header>
+
+    <div class="container">
+        <div class="season">
+            <h2>Season 1</h2>
+            <ul class="chapters">
+                <script>
+                    const episodeIds = {
+                        '01': '1Jq8q-qgm7ASItbFLaUMJYaNartsCMxF4',
+                        '02': '1sHE6aRAwHNuzrpvG6AOoNzmDLmJr1AtI',
+                        '03': '11x_ytnP_mWNsRB18tEXa7ttcyzLyjm-2',
+                        '04': '13adsNpoBcU31Hwuv5A6Nc3l1MRODsl3r',
+                        '05': '13yyaC0exTEkb1NrI1zahr7yxTs2taGgk',
+                        '06': '1G-EY5q1Wh_L4Hn-fZshlJaJfTnSaWBDG',
+                        '07': '1H6TTJJhLNJCbumjxdjPLkrm4lbzT1aEe',
+                        '08': '1QKtLdGWnwfGh3KBvwbM8TxVIGA80OcEV',
+                        '09': '1TJYVOj6YYHiwt217JzlECv_G9gHwO1Pb',
+                        '10': '1Uh9_sPNyiN4omY1uicInQu7VPakgP_S4',
+                        '11': '1XDi2YX6sgEp7r2UF4KskwCDcTa83JKKZ',
+                        '12': '1_gjB1MZyA67KfuwPolRTxo2SLh4e_X3f',
+                        '13': '1_r4hsLE1J6UDy0MWEGKdO64hq5TauIC_',
+                        '14': '1bGIWwCJe4lSwtef4IWWqnhNgVs3y_q7T',
+                        '15': '1desfJ4AHPpyS0nP7VkC0xv0ePDBUIZ6y',
+                        '16': '1fEXbku3dxt3GJbIipNduN6pG3ec5gAXe',
+                        '17': '1jo7M__UDUuhJ2Ab82l6dHPGIOK72ZcyB',
+                        '18': '1lK1IGyP10kaw1LCyFGT8_BusqccXEsbQ',
+                        '19': '1xF2dZMNGanWFnxB8aVGlxqKjOzCyK-QF',
+                        '20': '1yYdU0OdIo9_VX2twQTjK3aFiNZreaozr',
+                        '21': 'TU_ID_DRIVE_EP21',
+                        '22': 'TU_ID_DRIVE_EP22',
+                        '23': 'TU_ID_DRIVE_EP23'
+                    };
+
+                    for (let i = 1; i <= 23; i++) {
+                        const episodeNumber = i.toString().padStart(2, '0');
+                        const driveId = episodeIds[episodeNumber];
+                        const isWatched = localStorage.getItem(`heroes_s1_ep${episodeNumber}`) === 'watched';
+                        document.write(`
+                            <li>
+                                <a href="#" 
+                                   onclick="playVideo('Heroes 1x${episodeNumber}', '${driveId}')"
+                                   class="episode-link ${isWatched ? 'watched' : ''}"
+                                   data-episode="${episodeNumber}">
+                                    <span class="episode-number">Episode ${i}</span>
+                                    ${isWatched ? '<span class="watched-mark">✓</span>' : ''}
+                                </a>
+                            </li>
+                        `);
+                    }
+                </script>
+            </ul>
+        </div>
+    </div>
+
+    <div id="videoContainer" class="video-container" style="display: none;">
+    </div>
+
+    <button onclick="resetWatchedEpisodes()" class="reset-button">
+        Reset Watched Episodes
+    </button>
+
+    <script src="js/script.js"></script>
+</body>
+</html>
