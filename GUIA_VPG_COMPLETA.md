@@ -1,217 +1,88 @@
-# GUÍA COMPLETA: SERVICIOS DE VPG
-## Unidad de Inspección y Servicios al Comercio Exterior
+Débora,
 
----
+Espero que estés muy bien. Te comparto el modelo del PDF de cotización para VPG y la configuración propuesta del sistema de cotizaciones en Salesforce (Sales Cloud). La guía informativa publicada se usará solo como referencia, sin cambios: [Guía VPG](https://blasperez.github.io/Guia-Vpg/).
 
-## 📋 ¿QUÉ ES VPG?
+### Configuración del sistema de cotizaciones VPG
+- **Objetivo**: cotizaciones claras y consistentes, con cálculos automáticos, trazabilidad y respuesta rápida.
+- **Datos base**:
+  - Catálogo de productos/servicios y listas de precios (MXN/USD).
+  - Reglas de margen/descuentos; zonas y costos logísticos.
+  - Impuestos (IVA 16% por defecto) y tiempos de entrega.
+- **Flujo**:
+  1) Solicitud (producto/servicio, cantidades, destino, contacto).  
+  2) Cálculo automático (precio, IVA, flete si aplica).  
+  3) Aprobación interna si rebasa umbral de descuento.  
+  4) Generación de PDF y envío por correo al cliente (copia al comercial).  
+  5) Registro y seguimiento (estatus, vigencia, conversión a pedido).
+- **Backoffice VPG**: panel para catálogo, reglas de precios/descuentos, plantillas PDF y usuarios/roles.
+- **Notificaciones**: correo transaccional con marca VPG; alertas de vigencia y aprobación pendiente.
+- **Seguridad**: HTTPS, rate‑limit, reCAPTCHA, bitácora/auditoría.
+- **Integraciones (opcionales)**: CRM (oportunidades), almacenamiento de PDFs, webhooks a ERP.
 
-**VPG** es una empresa que proporciona **servicios de dictamen técnico** para productos que requieren evaluación antes de su importación o comercialización en México.
+### Modelo de PDF de Cotización (VPG)
+- **Encabezado**: Logo VPG, razón social, RFC emisor; número de cotización, fecha, vigencia; vendedor; moneda y tipo de cambio.
+- **Datos del cliente**: razón social y RFC; contacto y correo; destino/plaza de entrega (input manual).
+- **Condiciones comerciales**: Incoterms (EXW, FCA, FOB, CIF, DDP, DAP…), término de pago (PUE, PPD, 7/15/30 días…), tiempo de entrega, validez.
+- **Detalle de conceptos (tabla)**: Clave/Producto/Servicio, Descripción, Cantidad, Precio unitario, Descuento, Subtotal; IVA; Totales (Subtotal, IVA, Total).
+- **Referencias regulatorias (si aplica)**: NOM aplicables y modelos; número de pedimento, aduana (clave), observaciones.
+- **Notas y cláusulas**: observaciones, inclusiones/exclusiones, datos de contacto y firma.
 
-**En palabras simples:** VPG es como un "doctor" que revisa si los productos cumplen con las normas mexicanas antes de que puedas venderlos.
+### Campos a configurar en Salesforce (Sales Cloud)
+- **Quote (Record Type “VPG”)**
+  - `Name`, `QuoteNumber` (autonumérico), `AccountId`, `ContactId`, `CurrencyIsoCode`
+  - `Exchange_Rate__c` (número, 6 decimales), `Valid_Until__c` (fecha)
+  - `Payment_Terms__c` (picklist), `Incoterms__c` (picklist)
+  - `Destination__c` (texto libre), `Delivery_Time_Days__c` (número)
+  - `Observations__c` (texto largo)
+  - `Pedimento_Number__c` (texto, opcional), `Customs_Office_Code__c` (picklist, opcional)
+  - `NOM_References__c` (texto largo, opcional), `Salesperson__c` (lookup User)
+  - `Approval_Status__c` (Borrador, En aprobación, Aprobada, Rechazada)
+- **Quote Line Item**
+  - `Product2Id`, `Quantity`, `UnitPrice`, `Discount`, `Description`
+  - `IVA_Applicable__c` (checkbox)
+  - `NOM_Model__c` / `NOM_Type__c` (texto, opcional)
+  - `Line_Subtotal__c` (fórmula), `Line_IVA__c` (fórmula), `Line_Total__c` (fórmula)
+- **Totales (Quote)**: `Quote_Subtotal__c`, `Quote_IVA__c`, `Quote_Total__c`
+- **Product2 / Pricebook**
+  - `ProductCode`, `Family` (Servicios / Verificación NOM / Logística / Consultoría)
+  - `PricebookEntry` con precio vigente (edición quincenal por VPG)
 
----
+### Campos clave por fuente (Factura/Pedimento → Quote)
+- **Desde factura**: Moneda y tipo de cambio → `CurrencyIsoCode` / `Exchange_Rate__c`; RFC cliente (en `Account`); comentarios → `Observations__c`; referencias NOM → `NOM_References__c` (o por línea); pedimento (si aplica) → `Pedimento_Number__c`.
+- **Desde pedimento (si el servicio depende de la importación)**: Número de pedimento → `Pedimento_Number__c`; aduana (clave) → `Customs_Office_Code__c`; observaciones/anexos → `Observations__c`; RFC importador (validación con `Account`).
 
-## 🔍 ¿QUÉ SIGNIFICA "NORMA"?
+### Catálogo de productos/servicios (ejemplos VPG)
+- Verificación NOM‑050 (por modelo)
+- Verificación NOM‑024 (modelos adicionales)
+- Unidad de verificación / Dictamen
+- Gestión y trámites NOM
+- Servicios de logística asociados (si aplica)
+- Consultoría y acompañamiento técnico
 
-Una **NORMA** es un conjunto de reglas técnicas que los productos deben cumplir para ser vendidos en México.
+### Parámetros operativos
+- **Precios**: edición quincenal (PricebookEntry).
+- **Impuestos**: IVA 16% por defecto (checkbox por línea para exenciones).
+- **Incoterms / Término de pago**: picklists estandarizadas.
+- **Vigencia**: por defecto 15 días (editable).
+- **Aprobaciones**: regla por umbral de descuento o margen.
+- **Multiempresa**: Record Types por marca (ACON, RINO, VPG) con plantillas/layouts dedicados.
 
-**Ejemplos de NORMAS:**
-- **NOM-050-SCFI-2004:** Normas para productos eléctricos
-- **NOM-004-SE-2021:** Normas para productos de construcción
-- **NOM-020-SCFI-1997:** Normas para productos de consumo
+### Generación del PDF en Salesforce
+- **Opción 1 (rápida)**: Plantilla estándar de Quote + branding VPG + secciones anteriores.
+- **Opción 2 (flexible)**: Visualforce/Aura/LWC con layout 1:1 del modelo y formateo fino.
 
----
+### Ejemplos prácticos publicados
+En la guía pública están documentados 3 ejemplos prácticos que explican explícitamente la relación factura ↔ pedimento: [Guía VPG](https://blasperez.github.io/Guia-Vpg/).
+1. **Factura A‑27458**: no llevó modelos adicionales. Pedimento: **25 16 3807 5005428**.
+2. **Factura A‑27720**: llevó en total una NORMA y **15 modelos**. Pedimento: **25 11 3259 5000580**.
+3. **Factura A‑27525**: llevó **2 NORMAS** y en total **91 modelos**. Pedimento: **25 18 1793 5002070**.
 
-## 📦 ¿QUÉ ES UN "MODELO"?
+### Próximos pasos
+- **VPG**: Confirmar picklists (Incoterms, Término de pago), vigencia por defecto y umbrales de aprobación.
+- **Yornio**: Entregar manual de actualización de precios y plantilla PDF inicial (Record Type VPG).
+- **VPG**: Compartir catálogo final (ProductCode, descripción, UOM) y responsables de aprobación.
 
-Un **MODELO** es **cada producto individual o variación** que necesitas evaluar.
+Quedo atenta para ajustar texto, plantillas y campos según lo requieran.
 
-**Ejemplos prácticos:**
-
-### 🚗 **RINES (Llantas):**
-- **Modelo 1:** Llanta Michelin 205/55R16
-- **Modelo 2:** Llanta Michelin 225/45R17
-- **Modelo 3:** Llanta Michelin 195/65R15
-
-### 🏗️ **LÁMINAS:**
-- **Modelo 1:** Lámina galvanizada 0.5mm
-- **Modelo 2:** Lámina galvanizada 0.8mm
-- **Modelo 3:** Lámina galvanizada 1.0mm
-
-### 🌏 **PRODUCTOS ASIÁTICOS:**
-- **Modelo 1:** Producto marca "A" color rojo
-- **Modelo 2:** Producto marca "A" color azul
-- **Modelo 3:** Producto marca "B" color verde
-
----
-
-## 💰 ¿CUÁNTO CUESTA?
-
-### **Precios por tipo de NORM:**
-
-| **TIPO DE NORM** | **PRECIO** |
-|------------------|------------|
-| **Grupo 1** (NOM-050, NOM-004, etc.) | $1,897.50 + IVA |
-| **NOM-051** (Alimentos) | $2,150.50 + IVA |
-| **NOM-142** (Cosméticos) | $2,370.00 + IVA |
-| **Grupo 2** (NOM-173, NOM-186) | $4,500.00 + IVA |
-
----
-
-## ✅ ¿QUÉ INCLUYE LA TARIFA?
-
-### **Servicios incluidos:**
-- ✅ **Apertura de contrato**
-- ✅ **Envío de solicitud mismo día**
-- ✅ **Llenado y envío de layout al portal SNICE**
-- ✅ **Folio validado de 24 a 48 horas garantizado**
-- ✅ **Atención personalizada**
-- ✅ **Facturación al día**
-- ✅ **2 MODELOS INCLUIDOS (2 folios o productos)**
-
----
-
-## 🎯 ¿CUÁNTOS MODELOS INCLUYE?
-
-### **La tarifa base incluye 2 modelos:**
-- **Si solo necesitas 1 producto:** Pagas la tarifa base (incluye 2, pero solo usas 1)
-- **Si necesitas 2 productos:** Pagas la tarifa base (usas los 2 incluidos)
-- **Si necesitas 3 o más productos:** Pagas la tarifa base + costo por cada modelo adicional
-
----
-
-## 📊 EJEMPLOS PRÁCTICOS
-
-### **CASO 1: Solo 1 producto**
-- **Producto:** 1 tipo de llanta
-- **NORM:** 1 (para llantas)
-- **Modelos:** 1 (incluido en la tarifa)
-- **Costo:** $1,897.50 + IVA
-
-### **CASO 2: 2 productos**
-- **Productos:** 2 tipos de láminas
-- **NORM:** 1 (para láminas)
-- **Modelos:** 2 (incluidos en la tarifa)
-- **Costo:** $1,897.50 + IVA
-
-### **CASO 3: 15 productos**
-- **Productos:** 15 tipos de láminas
-- **NORM:** 1 (para láminas)
-- **Modelos:** 2 incluidos + 13 adicionales
-- **Costo:** $1,897.50 + IVA + (13 × $2,500.00) + IVA
-
----
-
-## 🔗 RELACIÓN ENTRE FACTURA Y PEDIMENTO
-
-### **¿Qué es un PEDIMENTO?**
-Un **PEDIMENTO** es el documento aduanero que registra la importación física de productos en México.
-
-### **¿Cómo se relacionan?**
-
-| **FACTURA** | **PEDIMENTO** |
-|--------------|----------------|
-| **Servicios de evaluación** | **Registro de importación física** |
-| **NORMAS** | **Categorías de productos** |
-| **MODELOS** | **Productos específicos importados** |
-
----
-
-## 📋 FACTURAS Y PEDIMENTOS ESPECÍFICOS
-
-### **🔍 DESGLOSE DETALLADO DE CADA FACTURA:**
-
-#### **📊 FACTURA A-27458 (RINES) - PEDIMENTO 25 16 3807 5005428**
-- **Producto Importado:** RINES (Llantas/Neumáticos)
-- **Servicio VPG:** 1 NORMA para evaluación técnica
-- **Costo NORMA:** $3,162.50
-- **Modelos Adicionales:** 0 (sin costo extra)
-- **Total Factura:** $3,668.50
-- **Relación:** La factura cobra por evaluar si las llantas cumplen normas mexicanas, mientras que el pedimento registra la importación física de las llantas
-
-#### **📊 FACTURA A-27720 (LÁMINAS) - PEDIMENTO 25 11 3259 5000580**
-- **Producto Importado:** Láminas
-- **Servicio VPG:** 1 NORMA + 15 modelos (13 adicionales)
-- **Total Factura:** $7,483.74
-- **Relación:** La factura cobra por evaluar láminas, mientras que el pedimento registra la importación física de las láminas
-
-#### **📊 FACTURA A-27525 (ASIA) - PEDIMENTO 25 18 1793 5002070**
-- **Producto Importado:** Productos Asiáticos
-- **Servicio VPG:** 2 NORMAS + 91 modelos (87 adicionales)
-- **Total Factura:** $32,869.76
-- **Relación:** La factura cobra por evaluar productos asiáticos, mientras que el pedimento registra la importación física de estos productos
-
-### **🔍 ¿CÓMO SE RELACIONAN FACTURA Y PEDIMENTO?**
-
-**La FACTURA y el PEDIMENTO son documentos diferentes pero relacionados:**
-
-#### **📋 FACTURA (Documento de VPG)**
-- **¿Qué es?** Documento que cobra por servicios de evaluación técnica
-- **¿Qué incluye?** NORMAS + MODELOS adicionales
-- **¿Cuándo se genera?** Cuando VPG evalúa tus productos
-- **¿Para qué sirve?** Para cobrar por los servicios de dictamen técnico
-
-#### **📋 PEDIMENTO (Documento Aduanero)**
-- **¿Qué es?** Documento oficial que registra la importación física
-- **¿Qué incluye?** Los productos físicos que entran al país
-- **¿Cuándo se genera?** Cuando los productos cruzan la frontera
-- **¿Para qué sirve?** Para registrar la entrada legal de mercancías
-
-#### **🔗 CONEXIÓN ENTRE AMBOS:**
-- **MISMO PRODUCTO:** Ambos se refieren al mismo lote de productos
-- **PROPÓSITO DIFERENTE:** La factura cobra por evaluar, el pedimento registra la importación
-- **PROCESO:** Primero VPG evalúa (factura), luego los productos entran (pedimento)
-- **RESULTADO:** Productos evaluados y certificados que pueden venderse legalmente en México
-
----
-
-## 📋 SERVICIOS ADICIONALES
-
-### **Si necesitas más de 2 modelos:**
-- **Constancia de Cumplimiento:** $2,500.00 + IVA **por modelo adicional**
-- **Diseño y Evaluación de Etiquetas:** $880.00 + IVA **por modelo adicional**
-
-### **Otros servicios:**
-- **Cancelación de servicio:** $632.50 + IVA **por NORM**
-
----
-
-## 🎯 RESUMEN EN 3 PUNTOS
-
-### **1. ¿Qué obtienes?**
-- **Evaluación técnica completa** de tus productos
-- **Certificación** de que cumplen con normas mexicanas
-- **2 modelos incluidos** en el precio base
-
-### **2. ¿Cuándo pagas extra?**
-- **Solo si necesitas más de 2 productos** evaluados
-- **Solo si requieres servicios adicionales** como constancias o diseño de etiquetas
-
-### **3. ¿Cómo funciona?**
-- **Pides evaluación** de tus productos
-- **VPG evalúa** si cumplen las normas
-- **Recibes dictamen** para poder vender en México
-
----
-
-## 📞 ¿TIENES DUDAS?
-
-**VPG está a tu servicio para:**
-- Explicar qué NORM aplica a tu producto
-- Calcular cuántos modelos necesitas
-- Cotizar el costo total del servicio
-- Resolver cualquier duda sobre el proceso
-
----
-
-## 💡 CONSEJO IMPORTANTE
-
-**Antes de importar productos:**
-1. **Identifica qué NORM aplica** a tu producto
-2. **Cuenta cuántos modelos** necesitas evaluar
-3. **Contacta a VPG** para una cotización precisa
-4. **Planifica el tiempo** (24-48 horas para folio validado)
-
----
-
-*Esta guía fue creada para facilitar la comprensión de los servicios de VPG. Para información más detallada o cotizaciones específicas, contacta directamente con VPG.*
+Saludos cordiales,  
+Blas
