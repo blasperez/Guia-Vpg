@@ -42,6 +42,57 @@
   </table>
 </section>
 <section>
+  <h2>Diferencias de campos: pedimento y modelos (Factura vs Pedimento)</h2>
+  <p>Comparativa concreta de qué campos aparecen o cambian cuando la factura incluye o no “MODELOS”, y cómo se reflejan (o no) en el pedimento asociado.</p>
+  <table>
+    <thead><tr><th>Caso</th><th>En la factura</th><th>En el pedimento</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>Sin modelos<br><small class="muted">A‑27458 / 25 16 3807 5005428</small></td>
+        <td>
+          • Concepto: Verificación de NORMAS (sin “MODELOS adicionales”)<br>
+          • Pedimento citado en comentarios: 25 16 3807 5005428
+        </td>
+        <td>
+          • Aduana: 160<br>
+          • Descripción por partida: “RINES CON ACCESORIOS”<br>
+          • Campo “MODELO”: no se especifica por partida
+        </td>
+      </tr>
+      <tr>
+        <td>Con modelos (13)<br><small class="muted">A‑27720 / 25 11 3259 5000580</small></td>
+        <td>
+          • Concepto: Verificación de NORMAS + “MODELOS 13 adicionales”<br>
+          • Pedimento citado en comentarios: 25 11 3259 5000580
+        </td>
+        <td>
+          • Aduana: 110<br>
+          • Descripción por partida: “ROLLOS DE PELÍCULA AUTOADHESIVA” (múltiples partidas)<br>
+          • Campo “MODELO”: no se especifica por partida
+        </td>
+      </tr>
+      <tr>
+        <td>Con modelos (87)<br><small class="muted">A‑27525 / 25 18 1793 5002070</small></td>
+        <td>
+          • Concepto: Verificación de NORMAS + “MODELOS 87 adicionales”<br>
+          • Pedimento citado en comentarios: 25 18 1793 5002070
+        </td>
+        <td>
+          • Aduana: 180<br>
+          • Descripción por partida: diversas refacciones<br>
+          • Campo “MODELO”: sí aparece (ej. SP135991, 32A0783, 59C2367, etc.)
+        </td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="note">
+    <strong>Lectura clave</strong><br>
+    • En la factura, “MODELOS” es un campo de servicio: cuántos productos se evaluaron y se facturan.<br>
+    • En el pedimento, “MODELO” (si aparece) es la designación comercial/técnica del producto físico en cada partida.<br>
+    • No hay correspondencia 1:1 obligatoria: puede haber factura con muchos “MODELOS” y un pedimento sin campo “MODELO”, o viceversa.
+  </div>
+</section>
+<section>
   <h2>Detalle de factura 27458</h2>
   <div class='grid'>
     <div><strong>Cliente</strong><br>RINES ESPECIALES C.P.: 45010<br><small class='muted'>RES8106273W6</small></div>
